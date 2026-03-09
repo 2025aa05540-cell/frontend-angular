@@ -1,0 +1,119 @@
+<div class="container">
+  <div class="form-card">
+    <div class="form-header">
+      <h2>{{ isEditMode ? '✏️ Edit Employee' : '➕ Add New Employee' }}</h2>
+      <p>{{ isEditMode ? 'Update the employee details below' : 'Fill in the details to add a new employee' }}</p>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-text">Loading employee data...</div>
+
+    <!-- Form -->
+    <form *ngIf="!loading" [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+
+      <div class="form-row">
+        <!-- First Name -->
+        <div class="form-group">
+          <label for="firstName">First Name <span class="required">*</span></label>
+          <input
+            type="text"
+            id="firstName"
+            formControlName="firstName"
+            placeholder="e.g. John"
+            [class.invalid]="isInvalid('firstName')"
+          />
+          <div *ngIf="isInvalid('firstName')" class="error-msg">
+            <span *ngIf="f['firstName'].errors?.['required']">First name is required.</span>
+            <span *ngIf="f['firstName'].errors?.['minlength']">Minimum 2 characters.</span>
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class="form-group">
+          <label for="lastName">Last Name <span class="required">*</span></label>
+          <input
+            type="text"
+            id="lastName"
+            formControlName="lastName"
+            placeholder="e.g. Doe"
+            [class.invalid]="isInvalid('lastName')"
+          />
+          <div *ngIf="isInvalid('lastName')" class="error-msg">
+            <span *ngIf="f['lastName'].errors?.['required']">Last name is required.</span>
+            <span *ngIf="f['lastName'].errors?.['minlength']">Minimum 2 characters.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email Address <span class="required">*</span></label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="e.g. john.doe@company.com"
+          [class.invalid]="isInvalid('email')"
+        />
+        <div *ngIf="isInvalid('email')" class="error-msg">
+          <span *ngIf="f['email'].errors?.['required']">Email is required.</span>
+          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email.</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <!-- Department -->
+        <div class="form-group">
+          <label for="department">Department <span class="required">*</span></label>
+          <select
+            id="department"
+            formControlName="department"
+            [class.invalid]="isInvalid('department')"
+          >
+            <option value="">-- Select Department --</option>
+            <option value="Engineering">Engineering</option>
+            <option value="HR">HR</option>
+            <option value="Finance">Finance</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Sales">Sales</option>
+            <option value="Operations">Operations</option>
+            <option value="Design">Design</option>
+          </select>
+          <div *ngIf="isInvalid('department')" class="error-msg">
+            <span *ngIf="f['department'].errors?.['required']">Department is required.</span>
+          </div>
+        </div>
+
+        <!-- Salary -->
+        <div class="form-group">
+          <label for="salary">Salary (₹) <span class="required">*</span></label>
+          <input
+            type="number"
+            id="salary"
+            formControlName="salary"
+            placeholder="e.g. 500000"
+            [class.invalid]="isInvalid('salary')"
+          />
+          <div *ngIf="isInvalid('salary')" class="error-msg">
+            <span *ngIf="f['salary'].errors?.['required']">Salary is required.</span>
+            <span *ngIf="f['salary'].errors?.['min']">Salary must be a positive value.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="form-actions">
+        <a routerLink="/" class="btn btn-secondary">← Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="submitting">
+          {{ submitting ? 'Saving...' : (isEditMode ? 'Update Employee' : 'Add Employee') }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
