@@ -27,7 +27,17 @@ jobs:
       - name: Build Angular
         run: npx ng build --configuration production
 
-      # 5. Copy Angular build to VM
+      # 5. Ensure temp frontend folder exists
+      - name: Prepare remote folder
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            mkdir -p /home/${{ secrets.VM_USERNAME }}/frontend
+
+      # 6. Copy Angular build to VM
       - name: Copy dist to VM
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -38,7 +48,7 @@ jobs:
           target: "/home/${{ secrets.VM_USERNAME }}/frontend/"
           strip_components: 4
 
-      # 6. Copy nginx config to temp location (NOT /etc)
+      # 7. Copy nginx config to temp
       - name: Copy nginx config
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -48,7 +58,7 @@ jobs:
           source: "nginx.conf"
           target: "/home/${{ secrets.VM_USERNAME }}/"
 
-      # 7. Move files + restart nginx
+      # 8. Deploy + restart nginx
       - name: Deploy and Restart Nginx
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -57,7 +67,7 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
 
-            echo "=== Preparing frontend folder ==="
+            echo "=== Moving frontend files ==="
             sudo mkdir -p /var/www/html
             sudo rm -rf /var/www/html/*
             sudo cp -r /home/${{ secrets.VM_USERNAME }}/frontend/* /var/www/html/
@@ -69,16 +79,21 @@ jobs:
             echo "=== Updating nginx config ==="
             sudo mv /home/${{ secrets.VM_USERNAME }}/nginx.conf /etc/nginx/sites-available/default
 
-            echo "=== Testing nginx config ==="
+            echo "=== Testing nginx ==="
             sudo nginx -t
 
             echo "=== Restarting nginx ==="
             sudo systemctl restart nginx
 
             echo "=== Verifying frontend ==="
-            if curl -s http://localhost > /dev/null; then
-              echo "✅ Frontend deployed successfully!"
-            else
-              echo "❌ Frontend failed!"
-              exit 1
-            fi
+            for i in {1..10}; do
+              if curl -s http://localhost > /dev/null; then
+                echo "✅ Frontend deployed successfully!"
+                exit 0
+              fi
+              echo "⏳ Waiting..."
+              sleep 2
+            done
+
+            echo "❌ Frontend failed!"
+            exit 1
