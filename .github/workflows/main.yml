@@ -44,7 +44,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "dist/employee-crud-frontend/browser/*"
+          source: "dist/employee-crud-frontend/*"
           target: "/home/${{ secrets.VM_USERNAME }}/frontend/"
           strip_components: 3
 
