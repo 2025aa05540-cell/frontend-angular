@@ -7,31 +7,38 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1. Checkout
       - name: Checkout code
         uses: actions/checkout@v3
-        
+
+      # 2. Setup Node
       - name: Setup Node 18
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
+      # 4. Build Angular
       - name: Build Angular
         run: npx ng build --configuration production
 
+      # 5. Copy Angular build to VM
       - name: Copy dist to VM
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "dist/employee-crud-frontend/browser/"
-          target: "/var/www/html/"
+          source: "dist/employee-crud-frontend/browser/*"
+          target: "/home/${{ secrets.VM_USERNAME }}/frontend/"
           strip_components: 4
 
+      # 6. Copy nginx config to temp location (NOT /etc)
       - name: Copy nginx config
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -39,16 +46,39 @@ jobs:
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
           source: "nginx.conf"
-          target: "/etc/nginx/sites-available/"
+          target: "/home/${{ secrets.VM_USERNAME }}/"
 
-      - name: Restart Nginx
+      # 7. Move files + restart nginx
+      - name: Deploy and Restart Nginx
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
+
+            echo "=== Preparing frontend folder ==="
+            sudo mkdir -p /var/www/html
+            sudo rm -rf /var/www/html/*
+            sudo cp -r /home/${{ secrets.VM_USERNAME }}/frontend/* /var/www/html/
+
+            echo "=== Setting permissions ==="
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R 755 /var/www/html
+
+            echo "=== Updating nginx config ==="
+            sudo mv /home/${{ secrets.VM_USERNAME }}/nginx.conf /etc/nginx/sites-available/default
+
+            echo "=== Testing nginx config ==="
             sudo nginx -t
+
+            echo "=== Restarting nginx ==="
             sudo systemctl restart nginx
-            echo "✅ Frontend deployed!"
-      
+
+            echo "=== Verifying frontend ==="
+            if curl -s http://localhost > /dev/null; then
+              echo "✅ Frontend deployed successfully!"
+            else
+              echo "❌ Frontend failed!"
+              exit 1
+            fi
