@@ -46,7 +46,7 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           source: "dist/employee-crud-frontend/browser/*"
           target: "/home/${{ secrets.VM_USERNAME }}/frontend/"
-          strip_components: 4
+          strip_components: 3
 
       # 7. Copy nginx config to temp
       - name: Copy nginx config
