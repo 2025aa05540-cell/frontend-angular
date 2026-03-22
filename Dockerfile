@@ -7,4 +7,5 @@ RUN npx ng build --configuration production
 
 FROM nginx:latest
 COPY --from=builder /app/dist/employee-crud-frontend/browser /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
